@@ -13,14 +13,12 @@ import os
 import sys
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--input_real', default ='datasets/FaceForensicsPP/test/c23/original')
+parser.add_argument('--input_fake', default ='datasets/FaceForensicsPP/test/c23/deepfakes')
+parser.add_argument('--mask', default ='datasets/FaceForensicsPP/test/masks/manipulated_sequences/Deepfakes/raw/masks')
+parser.add_argument('--output', default ='datasets/deepfakes')
 parser.add_argument('--imageSize', type=int, default=256, help='the height / width of the input image to network')
-parser.add_argument('--dataset', default ='datasets/FaceForensics/source-to-target', help='path to dataset')
-# parser.add_argument('--dataset', default ='datasets/FaceForensics/selfreenactment', help='path to dataset')
-parser.add_argument('--original', default ='original', help='original videos')
-parser.add_argument('--mask', default ='mask', help='mask videos')
-parser.add_argument('--altered', default ='altered', help='altered video')
-parser.add_argument('--num_frames', type=int, default=200, help='Number of frames extracted for each video')
-parser.add_argument('--output', default = 'datasets/full', help= 'name of output folder')
+parser.add_argument('--limit', type=int, default=10, help='number of images to extract for each video')
 parser.add_argument('--scale', type=float, default =1.3, help='enables resizing')
 
 opt = parser.parse_args()
@@ -36,7 +34,8 @@ def to_bw(mask, thresh_binary=127, thresh_otsu=255):
 def get_bbox(mask, thresh_binary=127, thresh_otsu=255):
     im_bw = to_bw(mask, thresh_binary, thresh_otsu)
 
-    im2, contours, hierarchy = cv2.findContours(im_bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    # im2, contours, hierarchy = cv2.findContours(im_bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(im_bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
     locations = np.array([], dtype=np.int).reshape(0, 5)
 
@@ -85,42 +84,45 @@ def extract_face(image, bbox, scale = 1.0):
 
     return crop_img
 
-def extract_face_videos(input_path, output_path):
-    f_vid_original = os.path.join(input_path, opt.original)
-    f_vid_mask = os.path.join(input_path, opt.mask)
-    f_vid_altered = os.path.join(input_path, opt.altered)
-
-    f_img_original = os.path.join(output_path, opt.original)
-    f_img_altered = os.path.join(output_path, opt.altered)
-
+def extract_face_videos(input_real, input_fake, input_mask, output):
     blank_img = np.zeros((opt.imageSize,opt.imageSize,3), np.uint8)
+    output_subfolder = 'train'
+    files_processed = 0
 
-    for f in os.listdir(f_vid_mask):
-        if os.path.isfile(os.path.join(f_vid_mask, f)):
-            if f.lower().endswith(('avi')):
+    for f in os.listdir(input_fake):
+        if os.path.isfile(os.path.join(input_fake, f)):
+            if f.lower().endswith(('mp4')):
                 print(f)
+
+                if files_processed == 700:
+                    print('\u2714 Done with [training] set, moving on to [validation]')
+                    output_subfolder = 'validation'
+                if files_processed == 850:
+                    print('\u2714 Done with [validation] set, moving on to [test]')
+                    output_subfolder = 'test'
+
                 filename = os.path.splitext(f)[0]
 
-                vidcap_original = cv2.VideoCapture(os.path.join(f_vid_original, f))
-                success_original, image_original = vidcap_original.read()
+                vidcap_real = cv2.VideoCapture(os.path.join(input_real, filename[0:3] + '.mp4'))
+                success_real, image_real = vidcap_real.read()
 
-                vidcap_mask = cv2.VideoCapture(os.path.join(f_vid_mask, f))
-                success_mask, image_mask = vidcap_mask.read()
+                vidcap_fake = cv2.VideoCapture(os.path.join(input_fake, f))
+                success_fake, image_fake = vidcap_fake.read()
 
-                vidcap_altered = cv2.VideoCapture(os.path.join(f_vid_altered, f))
-                success_altered, image_altered = vidcap_altered.read()
+                image_mask = cv2.imread(os.path.join(input_mask, filename, '0000.png'))
 
                 count = 0
 
-                while (success_original and success_mask and success_altered):
+                while (success_real and success_fake):
+
                     bbox = get_bbox(image_mask)
 
                     if bbox is None:
                         count += 1
                         continue
-
-                    original_cropped = extract_face(image_original, bbox, opt.scale)
-                    altered_cropped = extract_face(image_altered, bbox, opt.scale)
+                    
+                    original_cropped = extract_face(image_real, bbox, opt.scale)
+                    altered_cropped = extract_face(image_fake, bbox, opt.scale)
 
                     mask_cropped = to_bw(extract_face(image_mask, bbox, opt.scale))
                     mask_cropped = np.stack((mask_cropped,mask_cropped, mask_cropped), axis=2)
@@ -129,23 +131,18 @@ def extract_face_videos(input_path, output_path):
                         original_cropped = np.concatenate((original_cropped, blank_img), axis=1)
                         altered_cropped = np.concatenate((altered_cropped, mask_cropped), axis=1)
 
-                        cv2.imwrite(os.path.join(f_img_original, filename + "_%d.jpg" % count), original_cropped)
-                        cv2.imwrite(os.path.join(f_img_altered, filename + "_%d.jpg" % count), altered_cropped)
+                        cv2.imwrite(os.path.join(output, output_subfolder, 'real', filename + "_%d.jpg" % count), original_cropped)
+                        cv2.imwrite(os.path.join(output, output_subfolder, 'altered', filename + "_%d.jpg" % count), altered_cropped)
 
                         count += 1
-
-                    if count >= opt.num_frames:
+                    
+                    if count >= opt.limit:
                         break
-
-                    success_original, image_original = vidcap_original.read()
-                    success_mask, image_mask = vidcap_mask.read()
-                    success_altered, image_altered = vidcap_altered.read()
-
-def extract_face_datasets(dataset, output, action = ('train', 'test', 'validation')):
-    input_path = os.path.join(dataset, 'c23', 'test')
-    output_path = os.path.join(output, 'c23', 'test')
-
-    extract_face_videos(input_path, output_path)
+                    
+                    success_real, image_real = vidcap_real.read()
+                    success_fake, image_fake = vidcap_fake.read()
+                    image_mask = cv2.imread(os.path.join(input_mask, filename, str(count).zfill(4) + '.png'))
+                    files_processed += 1
 
 if __name__ == '__main__':
-    extract_face_datasets(opt.dataset, opt.output)
+    extract_face_videos(opt.input_real, opt.input_fake, opt.mask, opt.output)
