@@ -31,12 +31,12 @@ from model.ae import SegmentationLoss
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default ='datasets/face2face/source-to-target', help='path to dataset')
+parser.add_argument('--dataset', default ='/home/js8365/data/Sandbox/dataset-deepfakes/FaceForensics/classnseg', help='path to dataset')
 parser.add_argument('--train_set', default ='train', help='path to train dataset')
 parser.add_argument('--val_set', default ='validation', help='path to validation dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
-parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
-parser.add_argument('--imageSize', type=int, default=256, help='the height / width of the input image to network')
+parser.add_argument('--batchSize', type=int, default=16, help='input batch size')
+parser.add_argument('--imageSize', type=int, default=128, help='the height / width of the input image to network')
 parser.add_argument('--niter', type=int, default=100, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate, default=0.01')
 parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.5')

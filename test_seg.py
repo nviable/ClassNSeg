@@ -21,7 +21,7 @@ from model.ae import ActivationLoss
 from model.ae import SegmentationLoss
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default ='datasets/face2face/source-to-target', help='path to dataset')
+parser.add_argument('--dataset', default ='/home/js8365/data/Sandbox/dataset-deepfakes/FaceForensics/classnseg', help='path to dataset')
 parser.add_argument('--test_set', default ='test', help='path to test dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
