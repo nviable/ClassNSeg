@@ -80,7 +80,7 @@ if __name__ == "__main__":
         top, bottom, left, right = convert_locations(face_locations[0])
         face = frame[top:bottom,left:right, :]
         face = cv2.resize(face, (256,256))
-        face_tensor = torch.from_numpy(face)
+        face_tensor = torch.from_numpy(face, np.float32)
         face_tensor = face_tensor.transpose(0,1).transpose(0,2).contiguous()
         face_tensor = torch.unsqueeze(face_tensor, 0)
 
