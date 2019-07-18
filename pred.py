@@ -79,7 +79,8 @@ if __name__ == "__main__":
         locations.append(face_locations)
         top, bottom, left, right = convert_locations(face_locations[0])
         face = frame[top:bottom,left:right, :]
-        face = cv2.resize(face, (64,64))
+        face = cv2.resize(face, (256,256))
+        face = face[None, :, :, :]
         face_tensor = torch.Tensor(face)
 
         if gpu_id >= 0:
