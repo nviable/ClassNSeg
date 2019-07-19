@@ -12,10 +12,15 @@ import numpy as np
 from tqdm import tqdm
 import face_recognition
 from math import floor
+import argparse
 
 import torch.utils.data
 from model.ae import Encoder
 from model.ae import ActivationLoss
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--input', default ='predict.mp4', help='input file path')
+opt = parser.parse_args()
 
 class Predictor(object):
     def __init__(self, video_path, imageSize=256, gpu_id=0 ):
@@ -96,5 +101,5 @@ class Predictor(object):
         print(tol_pred)
         print(tol_pred_prob)
 
-pred = Predictor("predict.mp4")
+pred = Predictor(opt.input)
 pred.predictClassNseg()
