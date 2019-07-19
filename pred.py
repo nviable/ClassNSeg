@@ -49,6 +49,7 @@ if __name__ == "__main__":
 
     # total_frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
     locations = []
+    faces = []
     tol_pred = np.array([], dtype=np.float)
     tol_pred_prob = np.array([], dtype=np.float)
 
@@ -71,14 +72,21 @@ if __name__ == "__main__":
                 t.sub_(m).div_(s)
             return tensor
     
-    count = 0
-    while success:
-        print("Working on image {}, locations shape is {}".format(count, len(locations))
+    count = 1
+    print("Preprocessing")
+    while success:  
         face_locations = face_recognition.face_locations(frame)
         locations.append(face_locations)
         top, bottom, left, right = convert_locations(face_locations[0])
         face = frame[top:bottom,left:right, :]
         face = cv2.resize(face, (256,256))
+        print("Storing face %i" % count)
+        faces.append(face)
+        count +=1
+        success, frame = vidcap.read()
+
+    print("Beginning Training")
+    for face in tqdm(faces):
         face_tensor = torch.from_numpy(np.array(face, np.float32, copy=False))
         face_tensor = face_tensor.transpose(0,1).transpose(0,2).contiguous()
         face_tensor = torch.unsqueeze(face_tensor, 0)
@@ -106,8 +114,6 @@ if __name__ == "__main__":
 
         pred_prob = torch.softmax(torch.cat((zero.reshape(zero.shape[0],1), one.reshape(one.shape[0],1)), dim=1), dim=1)
         tol_pred_prob = np.concatenate((tol_pred_prob, pred_prob[:,1].data.cpu().numpy()))
-
-        count += 1
 
     print(tol_pred)
     print(tol_pred_prob)
