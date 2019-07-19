@@ -49,7 +49,6 @@ if __name__ == "__main__":
 
     # total_frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
     locations = []
-    faces = []
     tol_pred = np.array([], dtype=np.float)
     tol_pred_prob = np.array([], dtype=np.float)
 
@@ -74,7 +73,7 @@ if __name__ == "__main__":
     
     count = 0
     while success:
-        face_batch = []
+        print("Working on image {}, locations shape is {}".format(count, len(locations))
         face_locations = face_recognition.face_locations(frame)
         locations.append(face_locations)
         top, bottom, left, right = convert_locations(face_locations[0])
