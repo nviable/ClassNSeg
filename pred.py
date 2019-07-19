@@ -77,8 +77,9 @@ class Predictor(object):
             if gpu_id >= 0:
                 face_tensor = face_tensor.cuda(gpu_id)
 
-            latent = encoder(face_tensor).reshape(-1, 2, 64, 16, 16)
-            
+            pre_latent = encoder(face_tensor)
+            latent = pre_latent.reshape(-1, 2, 64, 16, 16)
+
             zero_abs = torch.abs(latent[:,0]).view(latent.shape[0], -1)
             zero = zero_abs.mean(dim=1)
 
@@ -98,8 +99,9 @@ class Predictor(object):
             pred_prob = torch.softmax(torch.cat((zero.reshape(zero.shape[0],1), one.reshape(one.shape[0],1)), dim=1), dim=1)
             tol_pred_prob = np.concatenate((tol_pred_prob, pred_prob[:,1].data.cpu().numpy()))
 
-        print(tol_pred)
-        print(tol_pred_prob)
+        print(pre_latent.data.numpy.argmax())
+        # print(tol_pred)
+        # print(tol_pred_prob)
 
 pred = Predictor(opt.input)
 pred.predictClassNseg()
