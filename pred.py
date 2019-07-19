@@ -56,7 +56,7 @@ class Predictor(object):
         encoder.eval()  # get the best weights
 
         count = 1
-        print("\u25b8 Preprocessing")
+        print("\u25b8 Preprocessing {}".format(self.path))
         while success:  
             face_locations = face_recognition.face_locations(frame)
             locations.append(face_locations)
