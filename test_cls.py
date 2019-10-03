@@ -22,14 +22,14 @@ from model.ae import Encoder
 from model.ae import ActivationLoss
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default ='datasets/face2face/source-to-target', help='path to dataset')
+parser.add_argument('--dataset', default ='~/dataset-deepfakes/FaceForensics/classnseg/Deepfakes/', help='path to dataset')
 parser.add_argument('--test_set', default ='test', help='path to test dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--imageSize', type=int, default=256, help='the height / width of the input image to network')
 parser.add_argument('--gpu_id', type=int, default=0, help='GPU ID')
 parser.add_argument('--id', type=int, default=46, help="checkpoint ID")
-parser.add_argument('--outf', default='checkpoints/full', help='folder to output images and model checkpoints')
+parser.add_argument('--outf', default='checkpoints/full/deepfakes', help='folder to output images and model checkpoints')
 
 opt = parser.parse_args()
 print(opt)
