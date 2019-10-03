@@ -65,6 +65,14 @@ Before doing finetuning, copy the best encoder_x.pt and decoder_x.pt checkpoints
 
 Beside testing on still images, the proposed method can be applied on videos. One recommendation is using OpenCV 3.4 with Caffe framework for face detection (Visit <a href="https://docs.opencv.org/3.4/d5/de7/tutorial_dnn_googlenet.html">here</a> for more information). Another option is using <a href="http://dlib.net/face_detector.py.html">Dlib</a>.
 
+**Face Extraction**
+
+The face extraction code used here has an extra prerequisite.
+- Caffe
+
+The model and weights for the face extraction can be downloaded from <a href="https://github.com/thegopieffect/computer_vision/tree/master/CAFFE_DNN">here</a>
+
+
 ## Authors
 - Huy H. Nguyen (https://researchmap.jp/nhhuy/?lang=english)
 - Fuming Fang (https://researchmap.jp/fang/?lang=english)
