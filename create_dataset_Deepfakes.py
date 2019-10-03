@@ -11,13 +11,15 @@ import cv2
 import numpy as np
 import os
 import sys
+import json
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--input_real', default ='datasets/FaceForensicsPP/test/c23/original')
-parser.add_argument('--input_fake', default ='datasets/FaceForensicsPP/test/c23/deepfakes')
-parser.add_argument('--mask', default ='datasets/FaceForensicsPP/test/masks/manipulated_sequences/Deepfakes/raw/masks')
-parser.add_argument('--output_real', default ='datasets/deepfakes/test/original')
-parser.add_argument('--output_fake', default ='datasets/deepfakes/test/altered')
+parser.add_argument('--input_real', default ='/home/js8365/dataset-deepfakes/FaceForensics/media/original_sequences/c23/videos')
+parser.add_argument('--input_fake', default ='/home/js8365/dataset-deepfakes/FaceForensics/media/manipulated_sequences/Deepfakes/c23/videos')
+parser.add_argument('--input_map', default ='/home/js8365/dataset-deepfakes/FaceForensics/dataset/splits')
+parser.add_argument('--mask', default ='/home/js8365/dataset-deepfakes/FaceForensics/media/manipulated_sequences/Deepfakes/raw/masks')
+parser.add_argument('--output', default ='/home/js8365/dataset-deepfakes/FaceForensics/classnseg/Deepfakes')
 parser.add_argument('--imageSize', type=int, default=256, help='the height / width of the input image to network')
 parser.add_argument('--limit', type=int, default=10, help='number of images to extract for each video')
 parser.add_argument('--scale', type=float, default =1.3, help='enables resizing')
@@ -134,5 +136,74 @@ def extract_face_videos(input_real, input_fake, input_mask, output_real, output_
                     success_fake, image_fake = vidcap_fake.read()
                     image_mask = cv2.imread(os.path.join(input_mask, filename, str(count).zfill(4) + '.png'))
 
+def extract_face_videos_mapped(input_real, input_fake, input_mask, output):
+
+    blank_img = np.zeros((opt.imageSize,opt.imageSize,3), np.uint8)
+    output_subfolders = ['train', 'val', 'test']
+
+    if not os.path.exists(output):
+        os.mkdir(output)
+    
+    for data_type in output_subfolders:
+        with open(os.path.join(opt.input_map, data_type + ".json")) as map_file:
+            pairs = json.load(map_file)
+            pbar = tqdm(pairs)
+    
+        if not os.path.exists(os.path.join(output, data_type, 'original')):
+                os.mkdir(os.path.join(output, data_type, 'original'))
+                os.mkdir(os.path.join(output, data_type, 'altered'))
+
+        for pair in pbar:
+            pbar.set_description("Working on [{}]: {} & {}".format(data_type, pair[0], pair[1]))
+
+            for i in range(len(pair)):
+                a = pair[i]
+                b = pair[abs(i-1)]
+                filename = a+"_"+b
+
+                vidcap_real = cv2.VideoCapture(os.path.join(input_real, a + '.mp4'))
+                success_real, image_real = vidcap_real.read()
+
+                vidcap_fake = cv2.VideoCapture(os.path.join(input_fake, filename + ".mp4"))
+                success_fake, image_fake = vidcap_fake.read()
+
+                image_mask = cv2.imread(os.path.join(input_mask, filename, '0000.png'))
+
+                count = 0
+
+                while (success_real and success_fake):
+
+                    bbox = get_bbox(image_mask)
+
+                    if bbox is None:
+                        count += 1
+                        success_real, image_real = vidcap_real.read()
+                        success_fake, image_fake = vidcap_fake.read()
+                        image_mask = cv2.imread(os.path.join(input_mask, filename, str(count).zfill(4) + '.png'))
+                        continue
+
+                    original_cropped = extract_face(image_real, bbox, opt.scale)
+                    altered_cropped = extract_face(image_fake, bbox, opt.scale)
+
+                    mask_cropped = to_bw(extract_face(image_mask, bbox, opt.scale))
+                    mask_cropped = np.stack((mask_cropped,mask_cropped, mask_cropped), axis=2)
+
+                    if (original_cropped is not None) and (altered_cropped is not None) and (mask_cropped is not None):
+                        original_cropped = np.concatenate((original_cropped, blank_img), axis=1)
+                        altered_cropped = np.concatenate((altered_cropped, mask_cropped), axis=1)
+
+                        cv2.imwrite(os.path.join(output, data_type, 'original', a + "_%d.jpg" % count), original_cropped)
+                        cv2.imwrite(os.path.join(output, data_type, 'altered', filename + "_%d.jpg" % count), altered_cropped)
+
+                        count += 1
+
+                    if count >= opt.limit:
+                        break
+
+                    success_real, image_real = vidcap_real.read()
+                    success_fake, image_fake = vidcap_fake.read()
+                    image_mask = cv2.imread(os.path.join(input_mask, filename, str(count).zfill(4) + '.png'))
+
+
 if __name__ == '__main__':
-    extract_face_videos(opt.input_real, opt.input_fake, opt.mask, opt.output_real, opt.output_fake)
+    extract_face_videos_mapped(opt.input_real, opt.input_fake, opt.mask, opt.output)
