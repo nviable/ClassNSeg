@@ -31,7 +31,7 @@ from model.ae import SegmentationLoss
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default ='/home/js8365/data/Sandbox/dataset-deepfakes/FaceForensics/classnseg', help='path to dataset')
+parser.add_argument('--dataset', default ='/home/js8365/dataset-deepfakes/FaceForensics/classnseg/Deepfakes', help='path to dataset')
 parser.add_argument('--train_set', default ='train', help='path to train dataset')
 parser.add_argument('--val_set', default ='validation', help='path to validation dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
@@ -45,7 +45,7 @@ parser.add_argument('--gamma', type=float, default=1, help='weight decay. defaul
 parser.add_argument('--eps', type=float, default=1e-07, help='epsilon. default=eps=1e-07')
 parser.add_argument('--gpu_id', type=int, default=0, help='GPU ID')
 parser.add_argument('--resume', type=int, default=0, help="choose a epochs to resume from (0 to train from scratch)")
-parser.add_argument('--outf', default='checkpoints/full', help='folder to output images and model checkpoints')
+parser.add_argument('--outf', default='checkpoints/full/deepfakes', help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 
 opt = parser.parse_args()
@@ -246,11 +246,12 @@ if __name__ == "__main__":
         ########################################################################
         # do checkpointing & validation
 
-        torch.save(encoder.state_dict(), os.path.join(opt.outf, 'encoder_%d.pt' % epoch))
-        torch.save(optimizer_encoder.state_dict(), os.path.join(opt.outf, 'optim_encoder_%d.pt' % epoch))
+        if(epoch % 10 == 0):
+            torch.save(encoder.state_dict(), os.path.join(opt.outf, 'encoder_%d.pt' % epoch))
+            torch.save(optimizer_encoder.state_dict(), os.path.join(opt.outf, 'optim_encoder_%d.pt' % epoch))
 
-        torch.save(decoder.state_dict(), os.path.join(opt.outf, 'decoder_%d.pt' % epoch))
-        torch.save(optimizer_decoder.state_dict(), os.path.join(opt.outf, 'optim_decoder_%d.pt' % epoch))
+            torch.save(decoder.state_dict(), os.path.join(opt.outf, 'decoder_%d.pt' % epoch))
+            torch.save(optimizer_decoder.state_dict(), os.path.join(opt.outf, 'optim_decoder_%d.pt' % epoch))
 
         encoder.eval()
         decoder.eval()
@@ -406,4 +407,11 @@ if __name__ == "__main__":
         encoder.train(mode=True)
         decoder.train(mode=True)
 
+    
+    torch.save(encoder.state_dict(), os.path.join(opt.outf, 'encoder_%d.pt' % epoch))
+    torch.save(optimizer_encoder.state_dict(), os.path.join(opt.outf, 'optim_encoder_%d.pt' % epoch))
+
+    torch.save(decoder.state_dict(), os.path.join(opt.outf, 'decoder_%d.pt' % epoch))
+    torch.save(optimizer_decoder.state_dict(), os.path.join(opt.outf, 'optim_decoder_%d.pt' % epoch))
+    
     text_writer.close()
